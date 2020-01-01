@@ -1,9 +1,12 @@
 extern crate petgraph;
+
+#[cfg(feature = "evcxr")]
+pub mod evcxr;
+
 use petgraph::visit::*;
 use petgraph::data::*;
-use petgraph_evcxr::draw_graph_with_attr_getters;
 
-struct StateMachine<'a, G, E, N, NW, EW, Transition>
+pub struct StateMachine<'a, G, E, N, NW, EW, Transition>
 where
     G:  GraphBase<EdgeId = E, NodeId = N>
     + Data<NodeWeight = NW, EdgeWeight = EW>,
@@ -63,7 +66,7 @@ where
     }
     return None;
   }
- 
+
   pub fn set_state<'c>(&'c mut self, state: NW) {
       get_id_for_state(&self.state_network, state).map(|id| self.state = id);
   }
@@ -71,7 +74,7 @@ where
   pub fn new(
     network: G,
     start: NW,
-    match_inputs: &'a dyn Fn(EW, EW) -> Option<Transition>,  
+    match_inputs: &'a dyn Fn(EW, EW) -> Option<Transition>,
   ) -> Option<StateMachine<'a, G, <G as GraphBase>::EdgeId, <G as GraphBase>::NodeId, NW, EW, Transition>> {
     get_id_for_state(&network, start).map(|id| StateMachine {
         state_network: network,
@@ -79,32 +82,6 @@ where
         match_inputs: match_inputs,
     })
   }
-}
-
-impl<'a, G, E, N, EW, NW, Transition> StateMachine<'a, G, E, N, NW, EW, Transition>
-where
-    G: NodeIndexable
-    + GraphProp
-    + GraphBase<EdgeId = E, NodeId = N>
-    + Data<NodeWeight = NW, EdgeWeight = EW>,
-    E: Copy + PartialEq,
-    N: Copy + PartialEq,
-for<'b> &'b G: IntoNodeReferences
-    + IntoEdgeReferences
-    + IntoEdges
-    + GraphBase<EdgeId = E, NodeId = N>
-    + Data<NodeWeight = NW, EdgeWeight = EW>,
-    EW: std::fmt::Display,
-    NW: std::fmt::Display,
-{
-    pub fn draw_evcxr(&self) {
-        draw_graph_with_attr_getters(
-            &self.state_network,
-            &[],
-            &|_, _| "".to_string(),
-            &|_, nr| (if nr.id() == self.state { "shape = circle style = filled fillcolor = red" } else { "shape = circle" }).to_string(),
-        );
-    }
 }
 
 #[cfg(test)]
