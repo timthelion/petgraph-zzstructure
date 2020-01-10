@@ -6,7 +6,7 @@ pub mod evcxr;
 use petgraph::data::*;
 use petgraph::visit::*;
 
-pub struct StateMachine<'a, G, E, N, NW, EW, Transition>
+pub struct StateMachine<'a, G, E, N, NW, EW, Action>
 where
     G: GraphBase<EdgeId = E, NodeId = N> + Data<NodeWeight = NW, EdgeWeight = EW>,
     E: Copy + PartialEq,
@@ -14,7 +14,7 @@ where
 {
     state_network: G,
     state: N,
-    match_inputs: &'a dyn Fn(EW, EW) -> Option<Transition>,
+    match_inputs: &'a dyn Fn(EW, EW) -> Option<Action>,
 }
 
 fn get_id_for_state<'a, G, NW, EW>(
@@ -33,7 +33,7 @@ where
     return None;
 }
 
-impl<'a, G, E, N, EW, NW, Transition> StateMachine<'a, G, E, N, NW, EW, Transition>
+impl<'a, G, E, N, EW, NW, Action> StateMachine<'a, G, E, N, NW, EW, Action>
 where
     G: Data<NodeWeight = NW, EdgeWeight = EW>
         + NodeIndexable
@@ -50,7 +50,7 @@ where
     EW: Eq + Copy,
     NW: Eq + Copy,
 {
-    pub fn next<'c>(&'c mut self, input: EW) -> Option<(Transition, NW)> {
+    pub fn next<'c>(&'c mut self, input: EW) -> Option<(Action, NW)> {
         for edge in (&self.state_network).edges(self.state) {
             match (self.match_inputs)(*edge.weight(), input) {
                 Some(matched_transition) => {
@@ -73,9 +73,9 @@ where
     pub fn new(
         network: G,
         start: NW,
-        match_inputs: &'a dyn Fn(EW, EW) -> Option<Transition>,
+        match_inputs: &'a dyn Fn(EW, EW) -> Option<Action>,
     ) -> Option<
-        StateMachine<'a, G, <G as GraphBase>::EdgeId, <G as GraphBase>::NodeId, NW, EW, Transition>,
+        StateMachine<'a, G, <G as GraphBase>::EdgeId, <G as GraphBase>::NodeId, NW, EW, Action>,
     > {
         get_id_for_state(&network, start).map(|id| StateMachine {
             state_network: network,
