@@ -23,7 +23,7 @@ fn get_id_for_state<'a, G, NW, EW>(
 ) -> Option<<&'a G as GraphBase>::NodeId>
 where
     &'a G: IntoNodeReferences + GraphBase + DataMap + Data<NodeWeight = NW, EdgeWeight = EW>,
-    NW: Eq,
+    NW: PartialEq,
 {
     for nr in network.node_references() {
         if *(network.node_weight(nr.id())).unwrap() == state {
@@ -47,8 +47,8 @@ where
         + IntoEdges
         + Data<NodeWeight = NW, EdgeWeight = EW>
         + GraphBase<EdgeId = E, NodeId = N>,
-    EW: Eq + Copy,
-    NW: Eq + Copy,
+    EW: PartialEq + Copy,
+    NW: PartialEq + Copy,
 {
     pub fn next<'c>(&'c mut self, input: EW) -> Option<(Action, NW)> {
         for edge in (&self.state_network).edges(self.state) {
