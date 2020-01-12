@@ -47,16 +47,16 @@ where
         + IntoEdges
         + Data<NodeWeight = NW, EdgeWeight = EW>
         + GraphBase<EdgeId = E, NodeId = N>,
-    EW: PartialEq + Copy,
-    NW: PartialEq + Copy,
+    EW: PartialEq + Clone,
+    NW: PartialEq + Clone,
 {
     pub fn next<'c>(&'c mut self, input: EW) -> Option<(Action, NW)> {
         for edge in (&self.state_network).edges(self.state) {
-            match (self.match_inputs)(*edge.weight(), input) {
+            match (self.match_inputs)(edge.weight().clone(), input.clone()) {
                 Some(matched_transition) => {
                     self.state = edge.target();
                     return match self.state_network.node_weight(self.state) {
-                        Some(weight) => Some((matched_transition, *weight)),
+                        Some(weight) => Some((matched_transition, weight.clone())),
                         None => None,
                     };
                 }
