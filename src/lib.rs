@@ -6,7 +6,7 @@ pub mod evcxr;
 use petgraph::data::*;
 use petgraph::visit::*;
 
-pub struct StateMachine<'a, G, E, N, NW, EW, Action>
+pub struct StateMachine<'a, G, E, N, NW, EW, Input, Action>
 where
     G: GraphBase<EdgeId = E, NodeId = N> + Data<NodeWeight = NW, EdgeWeight = EW>,
     E: Copy + PartialEq,
@@ -14,7 +14,7 @@ where
 {
     state_network: G,
     state: N,
-    match_inputs: &'a dyn Fn(EW, EW) -> Option<Action>,
+    match_inputs: &'a dyn Fn(Input, EW) -> Option<Action>,
 }
 
 fn get_id_for_state<'a, G, NW, EW>(
@@ -33,7 +33,7 @@ where
     return None;
 }
 
-impl<'a, G, E, N, EW, NW, Action> StateMachine<'a, G, E, N, NW, EW, Action>
+impl<'a, G, E, N, EW, NW, Input, Action> StateMachine<'a, G, E, N, NW, EW, Input, Action>
 where
     G: Data<NodeWeight = NW, EdgeWeight = EW>
         + NodeIndexable
@@ -49,10 +49,11 @@ where
         + GraphBase<EdgeId = E, NodeId = N>,
     EW: PartialEq + Clone,
     NW: PartialEq + Clone,
+    Input: Clone,
 {
-    pub fn next<'c>(&'c mut self, input: EW) -> Option<(Action, NW)> {
+    pub fn next<'c>(&'c mut self, input: Input) -> Option<(Action, NW)> {
         for edge in (&self.state_network).edges(self.state) {
-            match (self.match_inputs)(edge.weight().clone(), input.clone()) {
+            match (self.match_inputs)(input.clone(), edge.weight().clone()) {
                 Some(matched_transition) => {
                     self.state = edge.target();
                     return match self.state_network.node_weight(self.state) {
@@ -73,9 +74,9 @@ where
     pub fn new(
         network: G,
         start: NW,
-        match_inputs: &'a dyn Fn(EW, EW) -> Option<Action>,
+        match_inputs: &'a dyn Fn(Input, EW) -> Option<Action>,
     ) -> Option<
-        StateMachine<'a, G, <G as GraphBase>::EdgeId, <G as GraphBase>::NodeId, NW, EW, Action>,
+        StateMachine<'a, G, <G as GraphBase>::EdgeId, <G as GraphBase>::NodeId, NW, EW, Input, Action>,
     > {
         get_id_for_state(&network, start).map(|id| StateMachine {
             state_network: network,

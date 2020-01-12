@@ -3,7 +3,7 @@ use petgraph_evcxr::draw_graph_with_attr_getters;
 
 use crate::*;
 
-impl<'a, G, E, N, EW, NW, Action> StateMachine<'a, G, E, N, NW, EW, Action>
+impl<'a, G, E, N, EW, NW, Input, Action> StateMachine<'a, G, E, N, NW, EW, Input, Action>
 where
     G: NodeIndexable
         + GraphProp
