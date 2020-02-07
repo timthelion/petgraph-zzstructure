@@ -2,17 +2,20 @@ use petgraph_evcxr::draw_dot;
 use petgraph::*;
 use petgraph::graph::Graph;
 
+use std::fmt;
+
 use crate::*;
 
-pub fn draw_zzstructure<'a, W>(zzs: &'a Graph<W, Dimension, petgraph::Directed>)
+pub fn draw_zzstructure<'a, W>(zzs: &'a Graph<W, Dimension, petgraph::Directed>, vertical: Dimension, horizontal: Dimension)
 where
     W: fmt::Display,
 {
     let stacks = zzs.filter_map(
         |_, n| Some(n.clone()),
         |_, e| match e {
-            Dimension::EW => None,
-            Dimension::NS => Some(Dimension::NS),
+            _ if *e == horizontal => None,
+            _ if *e == vertical => Some(vertical),
+            _ => None,
         },
     );
     let mut dot_stacks: Vec<String> = vec![];
@@ -54,7 +57,7 @@ where
 
     for (k, v) in stack_heads.clone().into_iter() {
         for er in zzs.edges(k) {
-            if *er.weight() == Dimension::EW {
+            if *er.weight() == horizontal {
                 dot_edges.push(format!(
                     "\t{}:{} -> {}:{}\n",
                     v.index(),
