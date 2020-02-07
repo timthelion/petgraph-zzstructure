@@ -1,12 +1,12 @@
 [package]
-name = "petgraph-fsm"
+name = "petgraph-zzstructure"
 version = "0.1.0"
 authors = ["Timothy Hobbs"]
 edition = "2018"
 license = "LGPL-3.0-or-later"
-description = "Programmable finite state machines (automata) for rust"
-homepage = "https://github.com/timthelion/petgraph-fsm"
-repository = "https://github.com/timthelion/petgraph-fsm"
+description = "zzStructures implemented in petgraph"
+homepage = "https://github.com/timthelion/petgraph-zzstructure"
+repository = "https://github.com/timthelion/petgraph-zzstructure"
 
 
 [features]

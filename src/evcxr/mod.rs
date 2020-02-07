@@ -1,37 +1,81 @@
-use petgraph::visit::*;
-use petgraph_evcxr::draw_graph_with_attr_getters;
+use petgraph_evcxr::draw_dot;
+use petgraph::*;
+use petgraph::graph::Graph;
 
 use crate::*;
 
-impl<'a, G, E, N, EW, NW, Input, Action> StateMachine<'a, G, E, N, NW, EW, Input, Action>
+pub fn draw_zzstructure<'a, W>(zzs: &'a Graph<W, Dimension, petgraph::Directed>)
 where
-    G: NodeIndexable
-        + GraphProp
-        + GraphBase<EdgeId = E, NodeId = N>
-        + Data<NodeWeight = NW, EdgeWeight = EW>,
-    E: Copy + PartialEq,
-    N: Copy + PartialEq,
-    for<'b> &'b G: IntoNodeReferences
-        + IntoEdgeReferences
-        + IntoEdges
-        + GraphBase<EdgeId = E, NodeId = N>
-        + Data<NodeWeight = NW, EdgeWeight = EW>,
-    EW: std::fmt::Display,
-    NW: std::fmt::Display,
+    W: fmt::Display,
 {
-    pub fn draw_evcxr(&self) {
-        draw_graph_with_attr_getters(
-            &self.state_network,
-            &[],
-            &|_, _| "".to_string(),
-            &|_, nr| {
-                (if nr.id() == self.state {
-                    "shape = circle style = filled fillcolor = red"
+    let stacks = zzs.filter_map(
+        |_, n| Some(n.clone()),
+        |_, e| match e {
+            Dimension::EW => None,
+            Dimension::NS => Some(Dimension::NS),
+        },
+    );
+    let mut dot_stacks: Vec<String> = vec![];
+    let mut dot_edges: Vec<String> = vec![];
+    let mut stack_heads: HashMap<petgraph::graph::NodeIndex, petgraph::graph::NodeIndex> =
+        HashMap::new();
+
+    for nr in stacks.node_references() {
+        if !stacks
+            .edges_directed(nr.id(), Direction::Incoming)
+            .next()
+            .is_some()
+        {
+            let mut stack_items: Vec<String> = vec![];
+            let mut cur = nr.id();
+            loop {
+                stack_items.push(format!(
+                    "\t\t\t<TR><TD PORT=\"{}\">{}</TD></TR>\n",
+                    cur.index(),
+                    stacks.node_weight(cur).unwrap(),
+                ));
+                stack_heads.insert(cur, nr.id());
+                if let Some(er) = stacks.edges_directed(cur, Direction::Outgoing).next() {
+                    cur = er.target();
                 } else {
-                    "shape = circle"
-                })
-                .to_string()
-            },
+                    break;
+                }
+            }
+            let dot_stack: String = stack_items.iter().map(|x| x.clone()).collect();
+            dot_stacks.push(
+            format!(
+                "\t{} [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\">\n{}\n\t\t</TABLE>>];\n",
+                nr.id().index(),
+                dot_stack,
+            )
         );
+        }
     }
+
+    for (k, v) in stack_heads.clone().into_iter() {
+        for er in zzs.edges(k) {
+            if *er.weight() == Dimension::EW {
+                dot_edges.push(format!(
+                    "\t{}:{} -> {}:{}\n",
+                    v.index(),
+                    k.index(),
+                    stack_heads.get(&er.target()).unwrap().index(),
+                    er.target().index(),
+                ));
+            }
+        }
+    }
+
+    let dot_stacks_string: String = dot_stacks.iter().map(|x| x.clone()).collect();
+    let dot_edges_string: String = dot_edges.iter().map(|x| x.clone()).collect();
+    let dot = format!(
+        "digraph G {{
+    node [shape=plaintext]
+    rankdir=LR;
+    {}
+    {}
+}}",
+        dot_stacks_string, dot_edges_string,
+    );
+    draw_dot(dot);
 }

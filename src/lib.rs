@@ -3,89 +3,16 @@ extern crate petgraph;
 #[cfg(feature = "evcxr")]
 pub mod evcxr;
 
+pub mod pmzzs;
+
 use petgraph::data::*;
 use petgraph::visit::*;
 
-pub struct StateMachine<'a, G, E, N, NW, EW, Input, Action>
-where
-    G: GraphBase<EdgeId = E, NodeId = N> + Data<NodeWeight = NW, EdgeWeight = EW>,
-    E: Copy + PartialEq,
-    N: Copy + PartialEq,
-{
-    state_network: G,
-    state: N,
-    match_inputs: &'a dyn Fn(Input, EW) -> Option<Action>,
-}
+use std::collections::HashMap;
 
-fn get_id_for_state<'a, G, NW, EW>(
-    network: &'a G,
-    state: NW,
-) -> Option<<&'a G as GraphBase>::NodeId>
-where
-    &'a G: IntoNodeReferences + GraphBase + DataMap + Data<NodeWeight = NW, EdgeWeight = EW>,
-    NW: PartialEq,
-{
-    for nr in network.node_references() {
-        if *(network.node_weight(nr.id())).unwrap() == state {
-            return Option::Some(nr.id());
-        }
-    }
-    return None;
-}
+pub type Dimension = i64;
 
-impl<'a, G, E, N, EW, NW, Input, Action> StateMachine<'a, G, E, N, NW, EW, Input, Action>
-where
-    G: Data<NodeWeight = NW, EdgeWeight = EW>
-        + NodeIndexable
-        + GraphProp
-        + DataMap
-        + GraphBase<EdgeId = E, NodeId = N>,
-    E: Copy + PartialEq,
-    N: Copy + PartialEq,
-    for<'b> &'b G: IntoNodeReferences
-        + IntoEdgeReferences
-        + IntoEdges
-        + Data<NodeWeight = NW, EdgeWeight = EW>
-        + GraphBase<EdgeId = E, NodeId = N>,
-    EW: PartialEq + Clone,
-    NW: PartialEq + Clone,
-    Input: Clone,
-{
-    pub fn next<'c>(&'c mut self, input: Input) -> Option<(Action, NW)> {
-        for edge in (&self.state_network).edges(self.state) {
-            match (self.match_inputs)(input.clone(), edge.weight().clone()) {
-                Some(matched_transition) => {
-                    self.state = edge.target();
-                    return match self.state_network.node_weight(self.state) {
-                        Some(weight) => Some((matched_transition, weight.clone())),
-                        None => None,
-                    };
-                }
-                None => (),
-            }
-        }
-        return None;
-    }
-
-    pub fn set_state<'c>(&'c mut self, state: NW) {
-        get_id_for_state(&self.state_network, state).map(|id| self.state = id);
-    }
-
-    pub fn new(
-        network: G,
-        start: NW,
-        match_inputs: &'a dyn Fn(Input, EW) -> Option<Action>,
-    ) -> Option<
-        StateMachine<'a, G, <G as GraphBase>::EdgeId, <G as GraphBase>::NodeId, NW, EW, Input, Action>,
-    > {
-        get_id_for_state(&network, start).map(|id| StateMachine {
-            state_network: network,
-            state: id,
-            match_inputs: match_inputs,
-        })
-    }
-}
-
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -122,3 +49,5 @@ mod tests {
         assert_eq!(sm.next(2), None);
     }
 }
+
+*/
