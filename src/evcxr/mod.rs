@@ -6,7 +6,7 @@ use std::fmt;
 
 use crate::*;
 
-pub fn draw_zzstructure<'a, W>(zzs: &'a Graph<W, Dimension, petgraph::Directed>, vertical: Dimension, horizontal: Dimension)
+pub fn zzstructure_to_dot<'a, W>(zzs: &'a Graph<W, Dimension, petgraph::Directed>, vertical: Dimension, horizontal: Dimension) -> String
 where
     W: fmt::Display,
 {
@@ -80,5 +80,34 @@ where
 }}",
         dot_stacks_string, dot_edges_string,
     );
-    draw_dot(dot);
+    dot
+}
+
+pub fn draw_zzstructure<'a, W>(zzs: &'a Graph<W, Dimension, petgraph::Directed>, vertical: Dimension, horizontal: Dimension)
+where
+    W: fmt::Display,
+{
+    draw_dot(zzstructure_to_dot(zzs, vertical, horizontal));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use super::super::pmzzs::*;
+    use petgraph_examples as examples;
+
+    #[test]
+    fn test_conversions() {
+        let dwc = examples::directed_graph_with_cycle();
+        let dwc_zz = to_pmzzs(&dwc, "".to_string(), 0, 1);
+        let output = zzstructure_to_dot(&dwc_zz, 0, 1);
+        assert!(output.contains("digraph G {\n    node [shape=plaintext]\n    rankdir=LR;\n    \t7 [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\">\n\t\t\t<TR><TD PORT=\"7\"></TD></TR>\n\t\t\t<TR><TD PORT=\"1\">b</TD></TR>\n\t\t\t<TR><TD PORT=\"10\"></TD></TR>\n\t\t\t<TR><TD PORT=\"12\"></TD></TR>\n\n\t\t</TABLE>>];\n\t9 [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\">\n\t\t\t<TR><TD PORT=\"9\"></TD></TR>\n\t\t\t<TR><TD PORT=\"2\">c</TD></TR>\n\n\t\t</TABLE>>];\n\t11 [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\">\n\t\t\t<TR><TD PORT=\"11\"></TD></TR>\n\t\t\t<TR><TD PORT=\"3\">d</TD></TR>\n\t\t\t<TR><TD PORT=\"14\"></TD></TR>\n\n\t\t</TABLE>>];\n\t13 [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\">\n\t\t\t<TR><TD PORT=\"13\"></TD></TR>\n\t\t\t<TR><TD PORT=\"4\">e</TD></TR>\n\t\t\t<TR><TD PORT=\"16\"></TD></TR>\n\n\t\t</TABLE>>];\n\t17 [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\">\n\t\t\t<TR><TD PORT=\"17\"></TD></TR>\n\t\t\t<TR><TD PORT=\"15\"></TD></TR>\n\t\t\t<TR><TD PORT=\"5\">f</TD></TR>\n\t\t\t<TR><TD PORT=\"18\"></TD></TR>\n\n\t\t</TABLE>>];\n\t19 [label=<<TABLE BORDER=\"0\" CELLBORDER=\"1\" CELLSPACING=\"0\">\n\t\t\t<TR><TD PORT=\"19\"></TD></TR>\n\t\t\t<TR><TD PORT=\"0\">a</TD></TR>\n\t\t\t<TR><TD PORT=\"6\"></TD></TR>\n\t\t\t<TR><TD PORT=\"8\"></TD></TR>\n\n\t\t</TABLE>>];\n\n"));
+        assert!(output.contains("\t7:10 -> 11:11"));
+        assert!(output.contains("\t7:12 -> 13:13"));
+        assert!(output.contains("\t17:18 -> 19:19"));
+        assert!(output.contains("\t19:6 -> 7:7"));
+        assert!(output.contains("\t19:8 -> 9:9"));
+        assert!(output.contains("\t11:14 -> 17:15"));
+        assert!(output.contains("\t13:16 -> 17:17"));
+    }
 }
