@@ -46,12 +46,14 @@ where
                 zzg.add_edge(incomming, *node_map.get(&er.target()).unwrap(), vertical);
             }
         }
-        last_incomming_port.insert(*node_map.get(&er.target()).unwrap(), outgoing);
+        last_incomming_port.insert(*node_map.get(&er.target()).unwrap(), incomming);
     }
     zzg
 }
 
-pub fn from_pmzzs<'a, W>(zzg: &'a Graph<W, Dimension, petgraph::Directed>, vertical: Dimension, horizontal: Dimension) -> Graph<W, W, petgraph::Directed>
+/// Returns a de-zzStructure'd directed graph which is equivalent to the given pmzzs.
+/// If the input graph is not a PMZZS returns None.
+pub fn from_pmzzs<'a, W>(zzg: &'a Graph<W, Dimension, petgraph::Directed>, vertical: Dimension, horizontal: Dimension) -> Option<Graph<W, W, petgraph::Directed>>
 where
  W: PartialEq + Clone,
 {
@@ -69,15 +71,22 @@ where
         let mut ntype = NType::Vertex;
         for edge in zzg.edges(nr.id()) {
             if *edge.weight() == horizontal {
-                ntype = NType::OutgoingEdge;
+                if ntype == NType::Vertex {
+                    ntype = NType::OutgoingEdge;
+                } else {
+                    return None
+                }
             }
         }
         for edge in zzg.edges_directed(nr.id(), Incoming) {
             if *edge.weight() == horizontal {
-                ntype = NType::IncomingEdge;
+                if ntype == NType::Vertex {
+                    ntype = NType::IncomingEdge;
+                } else {
+                    return None
+                }
             }
         }
-        //println!("{:?}", ntype);
         match ntype {
             NType::OutgoingEdge => {
                 outgoing_edges.push(nr.id());
@@ -131,5 +140,25 @@ where
             }
         }
     }
-    gfz
+    Some(gfz)
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use petgraph_examples as examples;
+    use petgraph::algo::*;
+
+    #[test]
+    fn test_conversions() {
+        let dwc = examples::directed_graph_with_cycle();
+        let dwc_zz = to_pmzzs(&dwc, "".to_string(), 0, 1);
+        let re_dwc = from_pmzzs(&dwc_zz, 0, 1).unwrap();
+        assert!(is_isomorphic_matching(&dwc, &re_dwc, |a, b| a == b, |a, b| a==b));
+        let dwl = examples::directed_graph_with_loop();
+        let dwl_zz = to_pmzzs(&dwl, "".to_string(), 0, 1);
+        let re_dwl = from_pmzzs(&dwl_zz, 0, 1).unwrap();
+        assert!(is_isomorphic_matching(&dwl, &re_dwl, |a, b| a == b, |a, b| a==b));
+    }
 }

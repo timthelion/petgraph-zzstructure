@@ -14,5 +14,8 @@ evcxr = ["petgraph-evcxr"]
 default = []
 
 [dependencies]
-petgraph = {path="../petgraph"}
+petgraph = ">=0.4.13"
 petgraph-evcxr = {path="../petgraph-evcxr", optional=true}
+
+[dev-dependencies]
+petgraph-examples = ">=0.1.0"
